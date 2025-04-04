@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Approval Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #4a4a4a, #ffffff);
+            min-height: 200vh; /* Extended height for a longer page */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content at the top */
+            padding: 40px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #000000;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Particle Background */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: swirl 10s infinite ease-in-out;
+        }
+
+        @keyframes swirl {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(30px, -30px) rotate(90deg); }
+            50% { transform: translate(0, -60px) rotate(180deg); }
+            75% { transform: translate(-30px, -30px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 30px;
+            padding: 60px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+            min-height: 150vh; /* Increased height for longer content */
+            overflow-y: auto;
+            animation: expand 1s ease-out forwards;
+        }
+
+        @keyframes expand {
+            0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+            60% { transform: scale(1.05) rotate(5deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        h1 {
+            text-align: center;
+            color: #000000; /* Black text */
+            margin-bottom: 40px;
+            font-size: 42px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            background: #ffffff; /* White background */
+            padding: 10px 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: neonPulse 1.5s infinite alternate;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+            animation: shine 3s infinite linear;
+        }
+
+        @keyframes neonPulse {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8); }
+            100% { transform: scale(1.03); box-shadow: 0 0 30px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 1); }
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 100%; }
+            100% { left: 100%; }
+        }
+
+        .form-group {
+            margin-bottom: 35px;
+            position: relative;
+            opacity: 0;
+            animation: spinIn 0.7s forwards;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.2s; }
+        .form-group:nth-child(2) { animation-delay: 0.3s; }
+        .form-group:nth-child(3) { animation-delay: 0.4s; }
+        .form-group:nth-child(4) { animation-delay: 0.5s; }
+        .form-group:nth-child(5) { animation-delay: 0.6s; }
+        .form-group:nth-child(6) { animation-delay: 0.7s; }
+        .form-group:nth-child(7) { animation-delay: 0.8s; }
+        .form-group:nth-child(8) { animation-delay: 0.9s; }
+
+        @keyframes spinIn {
+            0% { opacity: 0; transform: rotateY(90deg) translateX(50px); }
+            100% { opacity: 1; transform: rotateY(0deg) translateX(0); }
+        }
+
+        label {
+            display: block;
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #000000;
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.5s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        input:focus {
+            border-color: #4a4a4a;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            transform: scale(1.03) translateY(-3px);
+            background: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        button:hover::before {
+            width: 500px;
+            height: 500px;
+        }
+
+        button:hover {
+            background: #4a4a4a;
+            transform: scale(1.1) rotate(3deg);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        #result {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            opacity: 0;
+            transform: scale(0.5) rotate(-10deg);
+        }
+
+        #result.show {
+            display: block;
+            animation: flipIn 0.8s forwards;
+        }
+
+        @keyframes flipIn {
+            0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+            50% { transform: scale(1.2) rotate(10deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .approved {
+            background: #e0e0e0;
+            color: #1a1a1a;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+        }
+
+        .rejected {
+            background: #d0d0d0;
+            color: #000000;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .error {
+            background: #f0f0f0;
+            color: #4a4a4a;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Additional Content for Length */
+        .intro-text {
+            margin-top: 50px;
+            font-size: 18px;
+            color: #1a1a1a;
+            line-height: 1.6;
+            text-align: center;
+            animation: fadeIn 1s forwards;
+        }
+
+        .extra-section {
+            margin-top: 60px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideUp 1s forwards;
+        }
+
+        .extra-section h2 {
+            color: #4a4a4a;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .extra-section p {
+            color: #1a1a1a;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 40px;
+            }
+            h1 {
+                font-size: 34px;
+                padding: 8px 16px;
+            }
+            button {
+                font-size: 18px;
+            }
+            .intro-text, .extra-section p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+    <div class="container">
+        <h1>Loan Approval Predictor</h1>
+        <form id="loanForm">
+            <div class="form-group">
+                <label for="credit_policy">Credit Policy (0 or 1)</label>
+                <input type="number" id="credit_policy" min="0" max="1" step="1" required>
+            </div>
+            <div class="form-group">
+                <label for="int_rate">Interest Rate (e.g., 0.11)</label>
+                <input type="number" id="int_rate" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="installment">Installment Amount</label>
+                <input type="number" id="installment" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="log_annual_inc">Log Annual Income</label>
+                <input type="number" id="log_annual_inc" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="dti">Debt-to-Income Ratio</label>
+                <input type="number" id="dti" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="fico">FICO Score</label>
+                <input type="number" id="fico" min="300" max="850" required>
+            </div>
+            <div class="form-group">
+                <label for="revol_util">Revolving Utilization (%)</label>
+                <input type="number" id="revol_util" step="0.01" min="0" max="100" required>
+            </div>
+            <div class="form-group">
+                <label for="inq_last_6mths">Inquiries in Last 6 Months</label>
+                <input type="number" id="inq_last_6mths" min="0" step="1" required>
+            </div>
+            <button type="submit">Predict Loan Approval</button>
+        </form>
+        <div id="result"></div>
+
+        <!-- Additional Content to Extend Page -->
+        <div class="intro-text">
+            Welcome to the Loan Approval Predictor! Enter your financial details above to instantly determine your loan eligibility. Our advanced algorithm analyzes your data in real-time for accurate results.
+        </div>
+
+        <div class="extra-section">
+            <h2>How It Works</h2>
+            <p>
+                Our system leverages cutting-edge machine learning to evaluate key financial metrics like your FICO score, debt-to-income ratio, and credit inquiries. Simply input your details, and within seconds, you'll receive a prediction on whether your loan will be approved or rejected.
+            </p>
+            <p>
+                This tool is designed for efficiency and accuracy, making it ideal for individuals and financial advisors alike. Scroll through this page to explore more about the process and benefits of using our predictor.
+            </p>
+        </div>
+
+        <div class="extra-section">
+            <h2>Why Choose Us?</h2>
+            <p>
+                Unlike traditional loan assessment methods, our predictor offers a fast, automated, and unbiased evaluation. Whether you're planning a major purchase or seeking financial clarity, we provide the insights you need to make informed decisions.
+            </p>
+            <p>
+                Experience the future of loan approvals with a sleek, user-friendly interface and real-time results. Keep scrolling to see how we stand out in the world of financial technology!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Particle Animation
+        const particleContainer = document.getElementById("particles");
+        for (let i = 0; i < 70; i++) {
+            const particle = document.createElement("div");
+            particle.classList.add("particle");
+            particle.style.width = `${Math.random() * 7 + 3}px`;
+            particle.style.height = particle.style.width;
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+            particle.style.animationDelay = `${Math.random() * 8}s`;
+            particleContainer.appendChild(particle);
+        }
+
+        // Form Submission
+        document.getElementById("loanForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const data = {
+                credit_policy: parseFloat(document.getElementById("credit_policy").value),
+                int_rate: parseFloat(document.getElementById("int_rate").value),
+                installment: parseFloat(document.getElementById("installment").value),
+                log_annual_inc: parseFloat(document.getElementById("log_annual_inc").value),
+                dti: parseFloat(document.getElementById("dti").value),
+                fico: parseFloat(document.getElementById("fico").value),
+                revol_util: parseFloat(document.getElementById("revol_util").value),
+                inq_last_6mths: parseFloat(document.getElementById("inq_last_6mths").value),
+            };
+
+            try {
+                const response = await fetch("http://localhost:5000/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById("result");
+                resultDiv.style.display = "none";
+                resultDiv.className = "";
+
+                if (response.ok) {
+                    resultDiv.textContent = `Loan Status: ${result.loan_approval_status}`;
+                    resultDiv.classList.add(result.loan_approval_status === "Approved" ? "approved" : "rejected");
+                } else {
+                    resultDiv.textContent = `Error: ${result.error}`;
+                    resultDiv.classList.add("error");
+                }
+                resultDiv.classList.add("show");
+            } catch (error) {
+                const resultDiv = document.getElementById("result");
+                resultDiv.style.display = "none";
+                resultDiv.className = "";
+                resultDiv.textContent = `Error: Could not connect to the server`;
+                resultDiv.classList.add("error");
+                resultDiv.classList.add("show");
+            }
+        });
+    </script>
+</body>
+</html>
