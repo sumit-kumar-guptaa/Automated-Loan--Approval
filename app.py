@@ -1,88 +1,104 @@
+# D:\Automated Loan Approval System\app.py
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # Add current directory to path
+
 from flask import Flask, request, jsonify
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-import pickle
+from werkzeug.utils import secure_filename
+from training_pipeline import TrainingPipeline
+from prediction_pipeline import PredictionPipeline
+import logging
 
 app = Flask(__name__)
 
-# Synthetic data generation and model training (for demo purposes)
+UPLOAD_FOLDER = 'uploads'
+ARTIFACTS_FOLDER = 'artifacts'
+ALLOWED_EXTENSIONS = {'csv'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/train', methods=['POST'])
 def train_model():
-    # Features: [credit.policy, int.rate, installment, log.annual.inc, dti, fico, revol.util, inq.last.6mths]
-    X = np.array([
-        [1, 0.11, 300, 11.0, 20.0, 700, 30.0, 2],
-        [0, 0.15, 500, 10.5, 35.0, 650, 50.0, 5],
-        [1, 0.09, 200, 12.0, 15.0, 750, 20.0, 1],
-        [0, 0.13, 400, 11.5, 25.0, 680, 40.0, 3],
-        # Add more data in a real scenario
-    ])
-    # Target: not.fully.paid (0 = fully paid, 1 = not fully paid)
-    y = np.array([0, 1, 0, 1])
-    
-    # Train a simple Logistic Regression model
-    model = LogisticRegression()
-    model.fit(X, y)
-    
-    # Save the model to a file
-    with open("loan_model.pkl", "wb") as f:
-        pickle.dump(model, f)
+    try:
+        if 'file' not in request.files:
+            logger.error("No file part in request")
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            logger.error("No selected file")
+            return jsonify({'error': 'No selected file'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            logger.info(f"File uploaded: {file_path}")
+            
+            os.makedirs(ARTIFACTS_FOLDER, exist_ok=True)
+            
+            trainer = TrainingPipeline(file_path)
+            best_model, best_model_name = trainer.run_pipeline()
+            logger.info(f"Training completed. Best model: {best_model_name}")
+            
+            return jsonify({
+                'message': 'Training completed successfully',
+                'best_model': best_model_name
+            }), 200
+        else:
+            logger.error("Invalid file type")
+            return jsonify({'error': 'Invalid file type. Only CSV allowed'}), 400
+    except Exception as e:
+        logger.error(f"Error in training: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-# Load the pre-trained model
-try:
-    with open("loan_model.pkl", "rb") as f:
-        model = pickle.load(f)
-except FileNotFoundError:
-    train_model()
-    with open("loan_model.pkl", "rb") as f:
-        model = pickle.load(f)
-
-# Define the prediction endpoint
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict_loan_approval():
     try:
-        # Get JSON data from the request
-        data = request.get_json()
+        if not request.is_json:
+            logger.error("Request must be JSON")
+            return jsonify({'error': 'Request must be JSON'}), 400
         
-        # Extract features from the request
-        credit_policy = float(data["credit_policy"])
-        int_rate = float(data["int_rate"])
-        installment = float(data["installment"])
-        log_annual_inc = float(data["log_annual_inc"])
-        dti = float(data["dti"])
-        fico = float(data["fico"])
-        revol_util = float(data["revol_util"])
-        inq_last_6mths = float(data["inq_last_6mths"])
+        features = request.get_json()
+        logger.info(f"Received features: {features}")
         
-        # Prepare input data for prediction
-        input_data = np.array([[credit_policy, int_rate, installment, log_annual_inc, 
-                                dti, fico, revol_util, inq_last_6mths]])
+        if 'credit.policy' in features:
+            del features['credit.policy']
         
-        # Make prediction
-        prediction = model.predict(input_data)[0]
+        if not os.path.exists('artifacts/best_loan_model.pkl') or not os.path.exists('artifacts/transformer.pkl'):
+            logger.error("Model or transformer not found. Please train the model first.")
+            return jsonify({'error': 'Model not trained. Please run /train first.'}), 400
         
-        # Interpret the result
-        result = "Approved" if prediction == 0 else "Rejected"
+        predictor = PredictionPipeline()
+        probability = predictor.run_pipeline(features)
         
-        # Return the response as JSON
-        return jsonify({
-            "loan_approval_status": result,
-            "message": "Prediction successful"
-        })
-    
-    except KeyError as e:
-        return jsonify({
-            "error": f"Missing field: {str(e)}",
-            "message": "Please provide all required fields"
-        }), 400
+        if probability is not None:
+            status = "Approved" if probability >= 50 else "Rejected"
+            logger.info(f"Prediction successful: {probability:.2f}% - {status}")
+            return jsonify({
+                'probability': round(probability, 2),
+                'loan_approval_status': status,
+                'message': 'Prediction successful'
+            }), 200
+        else:
+            logger.error("Prediction failed")
+            return jsonify({'error': 'Prediction failed'}), 500
     except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "message": "An error occurred during prediction"
-        }), 500
+        logger.error(f"Error in prediction: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-# Health check endpoint
-@app.route("/ping", methods=["GET"])
-def ping():
-    return jsonify({"message": "Flask backend is running"}), 200
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy'}), 200
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

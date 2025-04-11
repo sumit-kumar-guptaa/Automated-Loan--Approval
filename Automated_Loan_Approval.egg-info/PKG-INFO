@@ -1,0 +1,15 @@
+Metadata-Version: 2.2
+Name: Automated-Loan-Approval
+Version: 0.0.1
+Author: Sumit
+Author-email: sumit.gupta.14486@gmail.com
+Requires-Dist: flask
+Requires-Dist: werkzeug
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: xgboost
+Requires-Dist: joblib
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist
